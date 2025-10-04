@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NASA Exoplanet Detection System - Discover New Worlds</title>
+    
+    <!-- External Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Exo 2', sans-serif;
+            background: #000000;
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* 3D Space Background */
+        #space-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        /* Animated nebula background */
+        .nebula-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(ellipse at 40% 80%, rgba(119, 198, 255, 0.3) 0%, transparent 50%);
+            animation: nebula-drift 20s ease-in-out infinite alternate;
+            z-index: -2;
+        }
+
+        @keyframes nebula-drift {
+            0% { transform: scale(1) rotate(0deg); }
+            100% { transform: scale(1.1) rotate(2deg); }
+        }
+
+        /* Header */
+        .header {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 2px solid #4a90e2;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(45deg, #4a90e2, #7b68ee, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            text-align: center;
+            color: #b0b0b0;
+            font-size: 1.1rem;
+        }
+
+        /* Main container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Dashboard grid */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Card styles */
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(74, 144, 226, 0.3);
+        }
+
+        .card h3 {
+            color: #4a90e2;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Simulation section */
+        .simulation-section {
+            grid-column: 1 / -1;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+            padding: 2rem;
+            margin: 2rem 0;
+            border: 2px solid rgba(74, 144, 226, 0.3);
+        }
+
+        .simulation-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #4a90e2, #357abd);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
+        }
+
+        .btn:hover {
+            background: linear-gradient(45deg, #357abd, #2968a3);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(45deg, #ee5a52, #dc4c64);
+        }
+
+        /* Input controls */
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .control-group label {
+            color: #b0b0b0;
+            font-size: 0.9rem;
+        }
+
+        .control-group input, .control-group select {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 0.5rem;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        /* Chart containers */
+        .chart-container {
+            height: 400px;
+            margin: 1rem 0;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 1rem;
+        }
+
+        /* Model performance grid */
+        .model-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .model-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 1rem;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .model-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: #4a90e2;
+        }
+
+        .model-card h4 {
+            color: #4a90e2;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 0.3rem 0;
+            font-size: 0.9rem;
+        }
+
+        .metric-value {
+            color: #7b68ee;
+            font-weight: bold;
+        }
+
+        /* Prediction results */
+        .prediction-results {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        .prediction-bar {
+            display: flex;
+            align-items: center;
+            margin: 0.5rem 0;
+            gap: 1rem;
+        }
+
+        .prediction-label {
+            min-width: 120px;
+            font-size: 0.9rem;
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4a90e2, #7b68ee);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        .prediction-value {
+            min-width: 60px;
+            text-align: right;
+            font-weight: bold;
+            color: #7b68ee;
+        }
+
+        /* Loading animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #4a90e2;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Status indicators */
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .status-positive { background: #4caf50; }
+        .status-negative { background: #f44336; }
+        .status-neutral { background: #ff9800; }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .simulation-controls {
+                flex-direction: column;
+            }
+            
+            .model-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #4a90e2;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #357abd;
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated stars background -->
+    <div class="stars" id="stars"></div>
+
+    <!-- Header -->
+    <div class="header">
+        <h1><i class="fas fa-satellite"></i> NASA Exoplanet Detection System</h1>
+        <p>Advanced AI/ML Models for Discovering New Worlds Beyond Our Solar System</p>
+    </div>
+
+    <!-- Main container -->
+    <div class="container">
+        <!-- Live Simulation Section -->
+        <div class="simulation-section">
+            <h3><i class="fas fa-chart-line"></i> Live Exoplanet Detection Simulation</h3>
+            
+            <div class="simulation-controls">
+                <button class="btn" onclick="generateLightCurve(true)">
+                    <i class="fas fa-planet-ringed"></i> Generate with Exoplanet
+                </button>
+                <button class="btn btn-secondary" onclick="generateLightCurve(false)">
+                    <i class="fas fa-star"></i> Generate without Exoplanet
+                </button>
+                
+                <div class="control-group">
+                    <label for="noiseLevel">Noise Level</label>
+                    <input type="range" id="noiseLevel" min="0.0001" max="0.01" step="0.0001" value="0.001">
+                </div>
+                
+                <button class="btn" onclick="predictCurrent()" id="predictBtn">
+                    <i class="fas fa-brain"></i> Run AI Prediction
+                </button>
+            </div>
+
+            <div class="chart-container">
+                <div id="lightCurveChart"></div>
+            </div>
+
+            <div class="prediction-results" id="predictionResults" style="display: none;">
+                <h4><i class="fas fa-robot"></i> AI Model Predictions</h4>
+                <div id="predictionBars"></div>
+            </div>
+        </div>
+
+        <!-- Dashboard -->
+        <div class="dashboard">
+            <!-- Model Performance -->
+            <div class="card">
+                <h3><i class="fas fa-trophy"></i> Model Performance</h3>
+                <div class="model-grid" id="modelPerformance">
+                    <!-- Model cards will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Real-time Metrics -->
+            <div class="card">
+                <h3><i class="fas fa-chart-bar"></i> Performance Metrics</h3>
+                <div class="chart-container">
+                    <canvas id="metricsChart"></canvas>
+                </div>
+            </div>
+
+            <!-- ROC Curves -->
+            <div class="card">
+                <h3><i class="fas fa-chart-area"></i> ROC Curves</h3>
+                <div class="chart-container">
+                    <img id="rocCurve" style="width: 100%; height: 100%; object-fit: contain;" />
+                </div>
+            </div>
+
+            <!-- Training Progress -->
+            <div class="card">
+                <h3><i class="fas fa-graduation-cap"></i> Training Progress</h3>
+                <div class="chart-container">
+                    <canvas id="trainingChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dataset Information -->
+        <div class="card" style="margin-top: 2rem;">
+            <h3><i class="fas fa-database"></i> Dataset Information</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                <div class="metric">
+                    <span>Total Light Curves:</span>
+                    <span class="metric-value">2,847</span>
+                </div>
+                <div class="metric">
+                    <span>Confirmed Exoplanets:</span>
+                    <span class="metric-value">1,203</span>
+                </div>
+                <div class="metric">
+                    <span>Kepler Mission Data:</span>
+                    <span class="metric-value">1,456</span>
+                </div>
+                <div class="metric">
+                    <span>TESS Mission Data:</span>
+                    <span class="metric-value">891</span>
+                </div>
+                <div class="metric">
+                    <span>Synthetic Data:</span>
+                    <span class="metric-value">500</span>
+                </div>
+                <div class="metric">
+                    <span>Training Accuracy:</span>
+                    <span class="metric-value">94.1%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentLightCurve = null;
+        let modelPerformanceData = null;
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            createStars();
+            loadModelPerformance();
+            loadROCCurve();
+            loadTrainingProgress();
+            generateLightCurve(true); // Start with an exoplanet example
+        });
+
+        // Create animated stars background
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            const numStars = 100;
+
+            for (let i = 0; i < numStars; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.width = Math.random() * 3 + 1 + 'px';
+                star.style.height = star.style.width;
+                star.style.animationDelay = Math.random() * 2 + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+
+        // Generate synthetic light curve
+        async function generateLightCurve(hasExoplanet) {
+            const noiseLevel = document.getElementById('noiseLevel').value;
+            
+            try {
+                const response = await fetch(`/api/generate_light_curve?has_exoplanet=${hasExoplanet}&noise_level=${noiseLevel}`);
+                const data = await response.json();
+                
+                currentLightCurve = data;
+                plotLightCurve(data);
+                
+                // Hide previous predictions
+                document.getElementById('predictionResults').style.display = 'none';
+                
+            } catch (error) {
+                console.error('Error generating light curve:', error);
+            }
+        }
+
+        // Plot light curve using Plotly
+        function plotLightCurve(data) {
+            const trace = {
+                x: data.time,
+                y: data.flux,
+                type: 'scatter',
+                mode: 'lines',
+                line: {
+                    color: '#4a90e2',
+                    width: 1
+                },
+                name: 'Stellar Flux'
+            };
+
+            const layout = {
+                title: {
+                    text: `Light Curve ${data.has_exoplanet ? '(Contains Exoplanet Transit)' : '(No Exoplanet)'}`,
+                    font: { color: '#ffffff', size: 16 }
+                },
+                xaxis: {
+                    title: 'Time (days)',
+                    color: '#ffffff',
+                    gridcolor: 'rgba(255,255,255,0.2)'
+                },
+                yaxis: {
+                    title: 'Normalized Flux',
+                    color: '#ffffff',
+                    gridcolor: 'rgba(255,255,255,0.2)'
+                },
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: '#ffffff' }
+            };
+
+            Plotly.newPlot('lightCurveChart', [trace], layout, {responsive: true});
+        }
+
+        // Predict exoplanet using AI models
+        async function predictCurrent() {
+            if (!currentLightCurve) {
+                alert('Please generate a light curve first!');
+                return;
+            }
+
+            const predictBtn = document.getElementById('predictBtn');
+            predictBtn.innerHTML = '<div class="loading"></div> Analyzing...';
+            predictBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(currentLightCurve)
+                });
+
+                const result = await response.json();
+                displayPredictions(result.predictions);
+
+            } catch (error) {
+                console.error('Error making prediction:', error);
+                alert('Error making prediction. Please try again.');
+            } finally {
+                predictBtn.innerHTML = '<i class="fas fa-brain"></i> Run AI Prediction';
+                predictBtn.disabled = false;
+            }
+        }
+
+        // Display prediction results
+        function displayPredictions(predictions) {
+            const resultsDiv = document.getElementById('predictionResults');
+            const barsDiv = document.getElementById('predictionBars');
+            
+            barsDiv.innerHTML = '';
+            
+            const modelNames = {
+                'cnn': 'Convolutional Neural Network',
+                'lstm': 'LSTM Network',
+                'hybrid': 'Hybrid CNN-Features Model',
+                'random_forest': 'Random Forest',
+                'ensemble': 'Ensemble Model'
+            };
+
+            Object.entries(predictions).forEach(([model, probability]) => {
+                const barDiv = document.createElement('div');
+                barDiv.className = 'prediction-bar';
+                
+                const isPositive = probability > 0.5;
+                const confidence = Math.abs(probability - 0.5) * 2;
+                
+                barDiv.innerHTML = `
+                    <div class="prediction-label">
+                        <span class="status-indicator ${isPositive ? 'status-positive' : 'status-negative'}"></span>
+                        ${modelNames[model] || model}
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${probability * 100}%"></div>
+                    </div>
+                    <div class="prediction-value">${(probability * 100).toFixed(1)}%</div>
+                `;
+                
+                barsDiv.appendChild(barDiv);
+            });
+            
+            resultsDiv.style.display = 'block';
+        }
+
+        // Load model performance data
+        async function loadModelPerformance() {
+            try {
+                const response = await fetch('/api/model_performance');
+                modelPerformanceData = await response.json();
+                displayModelPerformance(modelPerformanceData);
+                createMetricsChart(modelPerformanceData);
+            } catch (error) {
+                console.error('Error loading model performance:', error);
+            }
+        }
+
+        // Display model performance cards
+        function displayModelPerformance(data) {
+            const container = document.getElementById('modelPerformance');
+            container.innerHTML = '';
+
+            const modelNames = {
+                'cnn': 'CNN',
+                'lstm': 'LSTM',
+                'hybrid': 'Hybrid',
+                'random_forest': 'Random Forest',
+                'ensemble': 'Ensemble'
+            };
+
+            Object.entries(data).forEach(([model, metrics]) => {
+                const card = document.createElement('div');
+                card.className = 'model-card';
+                
+                card.innerHTML = `
+                    <h4>${modelNames[model] || model}</h4>
+                    <div class="metric">
+                        <span>Accuracy:</span>
+                        <span class="metric-value">${(metrics.accuracy * 100).toFixed(1)}%</span>
+                    </div>
+                    <div class="metric">
+                        <span>AUC:</span>
+                        <span class="metric-value">${metrics.auc.toFixed(3)}</span>
+                    </div>
+                    <div class="metric">
+                        <span>Precision:</span>
+                        <span class="metric-value">${(metrics.precision * 100).toFixed(1)}%</span>
+                    </div>
+                    <div class="metric">
+                        <span>Recall:</span>
+                        <span class="metric-value">${(metrics.recall * 100).toFixed(1)}%</span>
+                    </div>
+                    <div class="metric">
+                        <span>Speed:</span>
+                        <span class="metric-value">${(metrics.inference_time * 1000).toFixed(0)}ms</span>
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+
+        // Create metrics comparison chart
+        function createMetricsChart(data) {
+            const ctx = document.getElementById('metricsChart').getContext('2d');
+            
+            const models = Object.keys(data);
+            const accuracies = models.map(model => data[model].accuracy * 100);
+            const aucs = models.map(model => data[model].auc * 100);
+            
+            new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: models.map(m => m.toUpperCase()),
+                    datasets: [{
+                        label: 'Accuracy (%)',
+                        data: accuracies,
+                        borderColor: '#4a90e2',
+                        backgroundColor: 'rgba(74, 144, 226, 0.2)',
+                        pointBackgroundColor: '#4a90e2'
+                    }, {
+                        label: 'AUC (%)',
+                        data: aucs,
+                        borderColor: '#7b68ee',
+                        backgroundColor: 'rgba(123, 104, 238, 0.2)',
+                        pointBackgroundColor: '#7b68ee'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { color: '#ffffff' },
+                            grid: { color: 'rgba(255,255,255,0.2)' },
+                            pointLabels: { color: '#ffffff' }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#ffffff' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Load ROC curve
+        async function loadROCCurve() {
+            try {
+                const response = await fetch('/api/roc_curve');
+                const data = await response.json();
+                document.getElementById('rocCurve').src = 'data:image/png;base64,' + data.image;
+            } catch (error) {
+                console.error('Error loading ROC curve:', error);
+            }
+        }
+
+        // Load training progress
+        async function loadTrainingProgress() {
+            try {
+                const response = await fetch('/api/training_progress');
+                const data = await response.json();
+                createTrainingChart(data);
+            } catch (error) {
+                console.error('Error loading training progress:', error);
+            }
+        }
+
+        // Create training progress chart
+        function createTrainingChart(data) {
+            const ctx = document.getElementById('trainingChart').getContext('2d');
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.epochs,
+                    datasets: [{
+                        label: 'Training Accuracy',
+                        data: data.training_data.hybrid.accuracy.map(x => x * 100),
+                        borderColor: '#4a90e2',
+                        backgroundColor: 'rgba(74, 144, 226, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Validation Accuracy',
+                        data: data.training_data.hybrid.val_accuracy.map(x => x * 100),
+                        borderColor: '#7b68ee',
+                        backgroundColor: 'rgba(123, 104, 238, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Epoch', color: '#ffffff' },
+                            ticks: { color: '#ffffff' },
+                            grid: { color: 'rgba(255,255,255,0.2)' }
+                        },
+                        y: {
+                            title: { display: true, text: 'Accuracy (%)', color: '#ffffff' },
+                            ticks: { color: '#ffffff' },
+                            grid: { color: 'rgba(255,255,255,0.2)' }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#ffffff' }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

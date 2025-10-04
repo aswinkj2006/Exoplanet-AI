@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exoplanet Discovery - NASA Exoplanet Detection System</title>
+    
+    <!-- External Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Exo 2', sans-serif;
+            background: #000000;
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Navigation */
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: transparent;
+            padding: 1.5rem 2rem;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        .navbar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            backdrop-filter: blur(20px);
+            mask: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 50%, rgba(0,0,0,0) 100%);
+            -webkit-mask: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 50%, rgba(0,0,0,0) 100%);
+            z-index: -1;
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.5rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, #ffffff, #a3f6ff, #9eb8ff);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-size: 200% 200%;
+            animation: gradient-shift 3s ease infinite;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+        }
+
+        @keyframes gradient-shift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 0.8rem 1.5rem;
+            border-radius: 30px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0);
+            border: 1px solid rgba(147, 147, 147, 0.324);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 2px 15px rgba(151, 151, 151, 0.3);
+        }
+
+        /* Hero Section */
+        .hero {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(0, 50, 100, 0.3)),
+                        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><defs><radialGradient id="g"><stop offset="0%" stop-color="%23ffffff" stop-opacity="0.1"/><stop offset="100%" stop-color="%23ffffff" stop-opacity="0"/></radialGradient></defs><circle cx="200" cy="200" r="3" fill="url(%23g)"/><circle cx="800" cy="300" r="2" fill="url(%23g)"/><circle cx="400" cy="600" r="1" fill="url(%23g)"/><circle cx="700" cy="800" r="2" fill="url(%23g)"/></svg>');
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-content {
+            max-width: 900px;
+            z-index: 10;
+        }
+
+        .hero h1 {
+            font-family: 'Orbitron', monospace;
+            font-size: clamp(3rem, 8vw, 5rem);
+            font-weight: 900;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, #00d4ff, #4ecdc4);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        /* Content Sections */
+        .content-section {
+            padding: 5rem 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 3rem;
+            background: linear-gradient(45deg, #00d4ff, #4ecdc4);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Discovery Methods */
+        .methods-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+
+        .method-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .method-card:hover {
+            transform: translateY(-10px);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 40px rgba(0, 212, 255, 0.2);
+        }
+
+        .method-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, #00d4ff, #4ecdc4);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .method-card h3 {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #00d4ff;
+        }
+
+        /* Statistics Dashboard */
+        .stats-dashboard {
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 20px;
+            padding: 3rem;
+            margin: 3rem 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .stat-number {
+            font-family: 'Orbitron', monospace;
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #00d4ff;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            opacity: 0.8;
+        }
+
+        /* Recent Discoveries */
+        .discoveries-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .discovery-card {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(76, 205, 196, 0.1));
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .discovery-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 20px 40px rgba(0, 212, 255, 0.3);
+        }
+
+        .discovery-card h4 {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.3rem;
+            color: #00d4ff;
+            margin-bottom: 1rem;
+        }
+
+        .discovery-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .info-icon {
+            color: #4ecdc4;
+        }
+
+        /* Missions Timeline */
+        .timeline {
+            position: relative;
+            margin: 3rem 0;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, #00d4ff, #4ecdc4);
+            transform: translateX(-50%);
+        }
+
+        .timeline-item {
+            display: flex;
+            align-items: center;
+            margin: 3rem 0;
+            position: relative;
+        }
+
+        .timeline-item:nth-child(odd) {
+            flex-direction: row-reverse;
+        }
+
+        .timeline-content {
+            flex: 1;
+            max-width: 45%;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2rem;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .timeline-date {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #00d4ff;
+            color: #000;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-weight: bold;
+            font-family: 'Orbitron', monospace;
+        }
+
+        /* Interactive Charts */
+        .chart-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 3rem;
+            margin: 2rem 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Gallery Styles */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+
+        .gallery-item {
+            position: relative;
+            overflow: hidden;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 212, 255, 0.3);
+        }
+
+        .image-placeholder {
+            height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .exoplanet-img {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(76, 205, 196, 0.2));
+            border: 2px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .telescope-img {
+            background: linear-gradient(135deg, rgba(76, 205, 196, 0.2), rgba(255, 217, 61, 0.2));
+            border: 2px solid rgba(76, 205, 196, 0.3);
+        }
+
+        .image-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+            padding: 2rem 1.5rem 1.5rem;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .gallery-item:hover .image-overlay {
+            transform: translateY(0);
+        }
+
+        .image-overlay h4 {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.2rem;
+            color: #00d4ff;
+            margin-bottom: 0.5rem;
+        }
+
+        .image-overlay p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            line-height: 1.4;
+        }
+
+        .chart-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.5rem;
+            color: #00d4ff;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .methods-grid,
+            .discoveries-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .timeline::before {
+                left: 20px;
+            }
+
+            .timeline-item {
+                flex-direction: row !important;
+                padding-left: 50px;
+            }
+
+            .timeline-content {
+                max-width: 100%;
+            }
+
+            .timeline-date {
+                left: 20px;
+                transform: none;
+            }
+        }
+
+        /* Animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <i class="fas fa-satellite"></i> EXOPLANET AI
+            </div>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/discovery" class="active">Discover</a></li>
+                <li><a href="/simulation">Simulate</a></li>
+                <li><a href="/metrics">Metrics</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Exoplanet Discovery</h1>
+            <p>Explore the fascinating world of exoplanet detection, learn about NASA's groundbreaking missions, and discover how we find new worlds beyond our solar system.</p>
+        </div>
+    </section>
+
+    <!-- Exoplanet Gallery -->
+    <section class="content-section fade-in">
+        <h2 class="section-title">Exoplanet & Telescope Gallery</h2>
+        <div class="gallery-grid">
+            <div class="gallery-item">
+                <div class="image-placeholder exoplanet-img">
+                    <i class="fas fa-globe" style="font-size: 4rem; color: #00d4ff;"></i>
+                    <div class="image-overlay">
+                        <h4>Kepler-452b</h4>
+                        <p>"Earth's Cousin" - First near-Earth-size planet in habitable zone</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="gallery-item">
+                <div class="image-placeholder telescope-img">
+                    <i class="fas fa-satellite" style="font-size: 4rem; color: #4ecdc4;"></i>
+                    <div class="image-overlay">
+                        <h4>Kepler Space Telescope</h4>
+                        <p>Discovered over 2,600 confirmed exoplanets using transit method</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="gallery-item">
+                <div class="image-placeholder exoplanet-img">
+                    <i class="fas fa-circle" style="font-size: 4rem; color: #ff6b6b;"></i>
+                    <div class="image-overlay">
+                        <h4>TRAPPIST-1 System</h4>
+                        <p>Seven Earth-sized planets, three in habitable zone</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="gallery-item">
+                <div class="image-placeholder telescope-img">
+                    <i class="fas fa-satellite-dish" style="font-size: 4rem; color: #ffd93d;"></i>
+                    <div class="image-overlay">
+                        <h4>TESS Mission</h4>
+                        <p>All-sky survey discovering planets around bright nearby stars</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="gallery-item">
+                <div class="image-placeholder exoplanet-img">
+                    <i class="fas fa-water" style="font-size: 4rem; color: #96ceb4;"></i>
+                    <div class="image-overlay">
+                        <h4>K2-18b</h4>
+                        <p>Water vapor detected in atmosphere of habitable zone planet</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="gallery-item">
+                <div class="image-placeholder telescope-img">
+                    <i class="fas fa-eye" style="font-size: 4rem; color: #e17055;"></i>
+                    <div class="image-overlay">
+                        <h4>James Webb Space Telescope</h4>
+                        <p>Revolutionary infrared observatory studying exoplanet atmospheres</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Discovery Methods Section -->
+    <section class="content-section fade-in">
+        <h2 class="section-title">How We Find Exoplanets</h2>
+        <div class="methods-grid">
+            <div class="method-card">
+                <div class="method-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3>Transit Photometry</h3>
+                <p>Detects periodic dimming of starlight as planets pass in front of their host stars. This method has discovered over 70% of known exoplanets and is used by Kepler and TESS missions.</p>
+                <div style="margin-top: 1rem; padding: 1rem; background: rgba(0, 212, 255, 0.1); border-radius: 10px;">
+                    <strong>Success Rate:</strong> 4,234 discoveries<br>
+                    <strong>Best For:</strong> Earth-sized to Jupiter-sized planets
+                </div>
+            </div>
+
+            <div class="method-card">
+                <div class="method-icon">
+                    <i class="fas fa-wave-square"></i>
+                </div>
+                <h3>Radial Velocity</h3>
+                <p>Measures the wobble of stars caused by gravitational pull of orbiting planets. This was the first method to detect exoplanets around sun-like stars.</p>
+                <div style="margin-top: 1rem; padding: 1rem; background: rgba(76, 205, 196, 0.1); border-radius: 10px;">
+                    <strong>Success Rate:</strong> 1,026 discoveries<br>
+                    <strong>Best For:</strong> Massive planets close to their stars
+                </div>
+            </div>
+
+            <div class="method-card">
+                <div class="method-icon">
+                    <i class="fas fa-search-plus"></i>
+                </div>
+                <h3>Gravitational Microlensing</h3>
+                <p>Uses gravity as a lens to magnify light from distant stars, revealing planets when they pass between us and background stars.</p>
+                <div style="margin-top: 1rem; padding: 1rem; background: rgba(255, 107, 107, 0.1); border-radius: 10px;">
+                    <strong>Success Rate:</strong> 178 discoveries<br>
+                    <strong>Best For:</strong> Planets far from their stars
+                </div>
+            </div>
+
+            <div class="method-card">
+                <div class="method-icon">
+                    <i class="fas fa-camera"></i>
+                </div>
+                <h3>Direct Imaging</h3>
+                <p>Directly photographs exoplanets by blocking out the bright light of their host stars using advanced coronagraphs and adaptive optics.</p>
+                <div style="margin-top: 1rem; padding: 1rem; background: rgba(255, 217, 61, 0.1); border-radius: 10px;">
+                    <strong>Success Rate:</strong> 69 discoveries<br>
+                    <strong>Best For:</strong> Young, hot, massive planets
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Statistics Dashboard -->
+    <section class="content-section fade-in">
+        <div class="stats-dashboard">
+            <h2 class="section-title">Real-Time Exoplanet Statistics</h2>
+            <div class="stats-grid" id="statsGrid">
+                <!-- Stats will be populated by JavaScript -->
+            </div>
+            
+            <!-- Discovery Methods Chart -->
+            <div class="chart-container">
+                <div class="chart-title">Discovery Methods Distribution</div>
+                <div id="methodsChart" style="height: 400px;"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Recent Discoveries -->
+    <section class="content-section fade-in">
+        <h2 class="section-title">Recent Groundbreaking Discoveries</h2>
+        <div class="discoveries-grid" id="discoveriesGrid">
+            <!-- Discoveries will be populated by JavaScript -->
+        </div>
+    </section>
+
+    <!-- NASA Missions Timeline -->
+    <section class="content-section fade-in">
+        <h2 class="section-title">NASA Exoplanet Missions</h2>
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-content">
+                    <h3>Kepler Space Telescope</h3>
+                    <p>Revolutionary mission that discovered over 2,600 confirmed exoplanets by monitoring 150,000 stars for transit events. Kepler showed us that planets are common in our galaxy.</p>
+                    <div style="margin-top: 1rem;">
+                        <strong>Status:</strong> Mission Complete<br>
+                        <strong>Discoveries:</strong> 2,662 confirmed exoplanets<br>
+                        <strong>Legacy:</strong> Proved Earth-sized planets are common
+                    </div>
+                </div>
+                <div class="timeline-date">2009-2017</div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-content">
+                    <h3>TESS (Transiting Exoplanet Survey Satellite)</h3>
+                    <p>All-sky survey mission searching for exoplanets around the brightest stars near Earth. TESS is finding planets perfect for follow-up atmospheric studies.</p>
+                    <div style="margin-top: 1rem;">
+                        <strong>Status:</strong> Active Mission<br>
+                        <strong>Discoveries:</strong> 402+ confirmed exoplanets<br>
+                        <strong>Goal:</strong> Survey 85% of the sky
+                    </div>
+                </div>
+                <div class="timeline-date">2018-Present</div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-content">
+                    <h3>James Webb Space Telescope</h3>
+                    <p>The most powerful space telescope ever built, capable of analyzing exoplanet atmospheres and searching for signs of habitability and life.</p>
+                    <div style="margin-top: 1rem;">
+                        <strong>Status:</strong> Active Mission<br>
+                        <strong>Focus:</strong> Atmospheric characterization<br>
+                        <strong>Capability:</strong> Detecting water vapor, oxygen, methane
+                    </div>
+                </div>
+                <div class="timeline-date">2021-Present</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Exoplanet Types Chart -->
+    <section class="content-section fade-in">
+        <div class="chart-container">
+            <div class="chart-title">Exoplanet Types by Size</div>
+            <div id="typesChart" style="height: 400px;"></div>
+        </div>
+    </section>
+
+    <script>
+        // Load and display real NASA data
+        async function loadExoplanetData() {
+            try {
+                const response = await fetch('/api/exoplanet_data');
+                const data = await response.json();
+                
+                // Populate statistics
+                populateStats(data);
+                
+                // Create charts
+                createMethodsChart(data.discovery_methods);
+                createTypesChart(data);
+                
+                // Populate recent discoveries
+                populateDiscoveries(data.recent_discoveries);
+                
+            } catch (error) {
+                console.error('Error loading exoplanet data:', error);
+            }
+        }
+
+        function populateStats(data) {
+            const statsGrid = document.getElementById('statsGrid');
+            
+            const stats = [
+                { number: data.total_confirmed, label: 'Confirmed Exoplanets', icon: 'fas fa-globe' },
+                { number: data.total_candidates, label: 'Planet Candidates', icon: 'fas fa-search' },
+                { number: data.habitable_zone, label: 'In Habitable Zone', icon: 'fas fa-seedling' },
+                { number: data.kepler_discoveries, label: 'Kepler Discoveries', icon: 'fas fa-satellite' },
+                { number: data.tess_discoveries, label: 'TESS Discoveries', icon: 'fas fa-satellite-dish' },
+                { number: data.earth_size, label: 'Earth-Sized', icon: 'fas fa-circle' }
+            ];
+
+            statsGrid.innerHTML = stats.map(stat => `
+                <div class="stat-card pulse">
+                    <i class="${stat.icon}" style="font-size: 2rem; color: #00d4ff; margin-bottom: 0.5rem;"></i>
+                    <span class="stat-number">${stat.number.toLocaleString()}</span>
+                    <div class="stat-label">${stat.label}</div>
+                </div>
+            `).join('');
+        }
+
+        function createMethodsChart(methods) {
+            const data = [{
+                values: Object.values(methods),
+                labels: Object.keys(methods),
+                type: 'pie',
+                hole: 0.4,
+                marker: {
+                    colors: ['#00d4ff', '#4ecdc4', '#ff6b6b', '#ffd93d', '#96ceb4']
+                },
+                textinfo: 'label+percent',
+                textposition: 'outside'
+            }];
+
+            const layout = {
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: '#ffffff', size: 14 },
+                showlegend: false,
+                margin: { t: 0, b: 0, l: 0, r: 0 }
+            };
+
+            Plotly.newPlot('methodsChart', data, layout, { responsive: true });
+        }
+
+        function createTypesChart(data) {
+            const types = ['Earth-Sized', 'Super-Earth', 'Neptune-Sized', 'Jupiter-Sized'];
+            const values = [data.earth_size, data.super_earth, data.neptune_size, data.jupiter_size];
+
+            const chartData = [{
+                x: types,
+                y: values,
+                type: 'bar',
+                marker: {
+                    color: ['#00d4ff', '#4ecdc4', '#ff6b6b', '#ffd93d']
+                }
+            }];
+
+            const layout = {
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: '#ffffff' },
+                xaxis: { color: '#ffffff', gridcolor: 'rgba(255,255,255,0.2)' },
+                yaxis: { color: '#ffffff', gridcolor: 'rgba(255,255,255,0.2)' },
+                margin: { t: 20, b: 40, l: 60, r: 20 }
+            };
+
+            Plotly.newPlot('typesChart', chartData, layout, { responsive: true });
+        }
+
+        function populateDiscoveries(discoveries) {
+            const discoveriesGrid = document.getElementById('discoveriesGrid');
+            
+            discoveriesGrid.innerHTML = discoveries.map(discovery => `
+                <div class="discovery-card">
+                    <h4>${discovery.name}</h4>
+                    <p style="margin-bottom: 1rem; opacity: 0.9;">${discovery.habitable ? 'Potentially habitable exoplanet' : 'Confirmed exoplanet'}</p>
+                    
+                    <div class="discovery-info">
+                        <div class="info-item">
+                            <i class="fas fa-ruler info-icon"></i>
+                            <span>${discovery.size}</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-map-marker-alt info-icon"></i>
+                            <span>${discovery.distance} light-years</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-calendar info-icon"></i>
+                            <span>Discovered ${discovery.discovery_year}</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-satellite info-icon"></i>
+                            <span>${discovery.mission}</span>
+                        </div>
+                    </div>
+                    
+                    ${discovery.habitable ? '<div style="margin-top: 1rem; padding: 0.5rem; background: rgba(76, 205, 196, 0.2); border-radius: 8px; text-align: center;"><i class="fas fa-leaf"></i> Potentially Habitable</div>' : ''}
+                </div>
+            `).join('');
+        }
+
+        // Scroll animations
+        function initScrollAnimations() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            });
+
+            document.querySelectorAll('.fade-in').forEach(el => {
+                observer.observe(el);
+            });
+        }
+
+        // Initialize everything
+        document.addEventListener('DOMContentLoaded', () => {
+            loadExoplanetData();
+            initScrollAnimations();
+        });
+    </script>
+</body>
+</html>
